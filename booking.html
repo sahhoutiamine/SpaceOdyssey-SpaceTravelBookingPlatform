@@ -222,6 +222,59 @@
       .accommodations-section.visible {
         display: block;
       }
+
+      .passenger-form {
+        background: rgba(10, 10, 24, 0.4);
+        border: 1px solid rgba(14, 165, 233, 0.2);
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        position: relative;
+      }
+
+      .passenger-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid rgba(14, 165, 233, 0.2);
+      }
+
+      .remove-passenger {
+        background: rgba(239, 68, 68, 0.2);
+        border: 1px solid rgba(239, 68, 68, 0.5);
+        color: #ef4444;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .remove-passenger:hover {
+        background: rgba(239, 68, 68, 0.3);
+      }
+
+      .error-message {
+        color: #ef4444;
+        font-size: 0.875rem;
+        margin-top: 0.25rem;
+        display: none;
+      }
+
+      .input-error {
+        border-color: #ef4444 !important;
+        box-shadow: 0 0 5px rgba(239, 68, 68, 0.3) !important;
+      }
+
+      .input-success {
+        border-color: #10b981 !important;
+        box-shadow: 0 0 5px rgba(16, 185, 129, 0.3) !important;
+      }
     </style>
   </head>
   <body class="text-white font-exo min-h-screen">
@@ -391,6 +444,7 @@
             <div class="mb-6">
               <label class="block mb-2 text-gray-300">Departure Date</label>
               <input type="date" id="departure-date" required />
+              <div class="error-message" id="departure-date-error"></div>
             </div>
 
             <!-- Number of Passengers -->
@@ -443,6 +497,7 @@
                 <!-- Accommodation cards will be populated by JavaScript -->
               </div>
               <input type="hidden" id="accommodation" value="" />
+              <div class="error-message" id="accommodation-error"></div>
             </div>
           </div>
 
@@ -450,76 +505,100 @@
           <div class="mb-8">
             <h2 class="font-orbitron text-2xl mb-6">Personal Information</h2>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-              <!-- First Name -->
-              <div>
-                <label class="block mb-2 text-gray-300">First Name</label>
-                <input
-                  type="text"
-                  id="first-name"
-                  placeholder="Enter your first name"
-                  required
-                />
-              </div>
+            <!-- Passenger Forms Container -->
+            <div id="passenger-forms-container">
+              <!-- Primary Passenger Form -->
+              <div class="passenger-form" id="passenger-form-0">
+                <div class="passenger-header">
+                  <h3 class="font-orbitron text-neon-blue">
+                    Primary Passenger
+                  </h3>
+                  <!-- No remove button for primary passenger -->
+                </div>
 
-              <!-- Last Name -->
-              <div>
-                <label class="block mb-2 text-gray-300">Last Name</label>
-                <input
-                  type="text"
-                  id="last-name"
-                  placeholder="Enter your last name"
-                  required
-                />
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                  <!-- First Name -->
+                  <div>
+                    <label class="block mb-2 text-gray-300">First Name</label>
+                    <input
+                      type="text"
+                      name="first-name[]"
+                      placeholder="Enter your first name"
+                      required
+                      data-validation="name"
+                    />
+                    <div class="error-message" data-error="first-name"></div>
+                  </div>
+
+                  <!-- Last Name -->
+                  <div>
+                    <label class="block mb-2 text-gray-300">Last Name</label>
+                    <input
+                      type="text"
+                      name="last-name[]"
+                      placeholder="Enter your last name"
+                      required
+                      data-validation="name"
+                    />
+                    <div class="error-message" data-error="last-name"></div>
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                  <!-- Email -->
+                  <div>
+                    <label class="block mb-2 text-gray-300"
+                      >Email Address</label
+                    >
+                    <input
+                      type="email"
+                      name="email[]"
+                      placeholder="Enter your email"
+                      required
+                      data-validation="email"
+                    />
+                    <div class="error-message" data-error="email"></div>
+                  </div>
+
+                  <!-- Phone -->
+                  <div>
+                    <label class="block mb-2 text-gray-300">Phone Number</label>
+                    <input
+                      type="tel"
+                      name="phone[]"
+                      placeholder="Enter your phone number"
+                      required
+                      data-validation="phone"
+                    />
+                    <div class="error-message" data-error="phone"></div>
+                  </div>
+                </div>
+
+                <!-- Special Requirements -->
+                <div class="mb-6">
+                  <label class="block mb-2 text-gray-300"
+                    >Special Requirements</label
+                  >
+                  <textarea
+                    class="pl-3 pt-1"
+                    name="special-requirements[]"
+                    rows="4"
+                    placeholder="Any special requirements or notes..."
+                  ></textarea>
+                </div>
               </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-              <!-- Email -->
-              <div>
-                <label class="block mb-2 text-gray-300">Email Address</label>
-                <input
-                  type="email"
-                  id="email"
-                  placeholder="Enter your email"
-                  required
-                />
-              </div>
-
-              <!-- Phone -->
-              <div>
-                <label class="block mb-2 text-gray-300">Phone Number</label>
-                <input
-                  type="tel"
-                  id="phone"
-                  placeholder="Enter your phone number"
-                  required
-                />
-              </div>
-            </div>
-
-            <!-- Special Requirements -->
-            <div class="mb-6">
-              <label class="block mb-2 text-gray-300"
-                >Special Requirements</label
+            <!-- Action Buttons -->
+            <div class="flex flex-col md:flex-row gap-4 mb-6">
+              <button
+                type="button"
+                id="add-passenger-btn"
+                class="btn-secondary text-white px-8 py-3 rounded-lg font-bold text-lg flex-1"
               >
-              <textarea
-                class="pl-3 pt-1"
-                id="special-requirements"
-                rows="4"
-                placeholder="Any special requirements or notes..."
-              ></textarea>
+                Add Passenger
+              </button>
             </div>
-          </div>
-
-          <!-- Action Buttons -->
-          <div class="flex flex-col md:flex-row gap-4 mb-6">
-            <button
-              type="button"
-              class="btn-secondary text-white px-8 py-3 rounded-lg font-bold text-lg flex-1"
-            >
-              Add Passenger
-            </button>
           </div>
 
           <button
@@ -604,6 +683,8 @@
       // Global variables to store data
       let accommodationsData = [];
       let destinationsData = [];
+      let passengerCount = 1; // Start with 1 (primary passenger)
+      let maxPassengers = 1; // Will be set based on selection
 
       // Create stars background
       function createStars() {
@@ -647,8 +728,171 @@
             accommodationCards.forEach((c) => c.classList.remove("selected"));
             this.classList.add("selected");
             accommodationInput.value = this.dataset.type;
+            clearError("accommodation-error");
           });
         });
+      }
+
+      // Form validation functions
+      function validateName(name) {
+        const nameRegex = /^[a-zA-Z\s]{2,50}$/;
+        return nameRegex.test(name.trim());
+      }
+
+      function validateEmail(email) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email.trim());
+      }
+
+      function validatePhone(phone) {
+        const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
+        return phoneRegex.test(phone.replace(/\s/g, ""));
+      }
+
+      function validateDate(date) {
+        const selectedDate = new Date(date);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        return selectedDate >= today;
+      }
+
+      // Show error message
+      function showError(input, message) {
+        const errorElement = input.parentNode.querySelector(".error-message");
+        errorElement.textContent = message;
+        errorElement.style.display = "block";
+        input.classList.add("input-error");
+        input.classList.remove("input-success");
+      }
+
+      // Clear error message
+      function clearError(errorId) {
+        const errorElement = document.getElementById(errorId);
+        if (errorElement) {
+          errorElement.textContent = "";
+          errorElement.style.display = "none";
+        }
+      }
+
+      // Show success state
+      function showSuccess(input) {
+        const errorElement = input.parentNode.querySelector(".error-message");
+        errorElement.style.display = "none";
+        input.classList.remove("input-error");
+        input.classList.add("input-success");
+      }
+
+      // Validate input on blur
+      function setupInputValidation() {
+        const inputs = document.querySelectorAll("input[data-validation]");
+
+        inputs.forEach((input) => {
+          input.addEventListener("blur", function () {
+            validateInput(this);
+          });
+
+          input.addEventListener("input", function () {
+            // Clear error as user types
+            if (this.value.trim() !== "") {
+              const errorElement =
+                this.parentNode.querySelector(".error-message");
+              errorElement.style.display = "none";
+              this.classList.remove("input-error");
+            }
+          });
+        });
+      }
+
+      // Validate individual input
+      function validateInput(input) {
+        const value = input.value.trim();
+        const validationType = input.getAttribute("data-validation");
+
+        if (value === "") {
+          showError(input, "This field is required");
+          return false;
+        }
+
+        let isValid = false;
+        let errorMessage = "";
+
+        switch (validationType) {
+          case "name":
+            isValid = validateName(value);
+            errorMessage =
+              "Please enter a valid name (2-50 characters, letters only)";
+            break;
+          case "email":
+            isValid = validateEmail(value);
+            errorMessage = "Please enter a valid email address";
+            break;
+          case "phone":
+            isValid = validatePhone(value);
+            errorMessage = "Please enter a valid phone number";
+            break;
+        }
+
+        if (!isValid) {
+          showError(input, errorMessage);
+          return false;
+        } else {
+          showSuccess(input);
+          return true;
+        }
+      }
+
+      // Validate entire form
+      function validateForm() {
+        let isValid = true;
+
+        // Validate destination
+        const destination = document.getElementById("destination");
+        if (destination.value === "") {
+          showError(destination, "Please select a destination");
+          isValid = false;
+        } else {
+          clearError("destination-error");
+        }
+
+        // Validate departure date
+        const departureDate = document.getElementById("departure-date");
+        if (departureDate.value === "") {
+          showError(departureDate, "Please select a departure date");
+          isValid = false;
+        } else if (!validateDate(departureDate.value)) {
+          showError(
+            departureDate,
+            "Departure date must be today or in the future"
+          );
+          isValid = false;
+        } else {
+          clearError("departure-date-error");
+        }
+
+        // Validate accommodation
+        const accommodation = document.getElementById("accommodation");
+        if (accommodation.value === "") {
+          showError(accommodation, "Please select an accommodation type");
+          isValid = false;
+        } else {
+          clearError("accommodation-error");
+        }
+
+        // Validate passenger forms
+        const passengerForms = document.querySelectorAll(".passenger-form");
+        passengerForms.forEach((form, index) => {
+          const firstName = form.querySelector('input[name="first-name[]"]');
+          const lastName = form.querySelector('input[name="last-name[]"]');
+          const email = form.querySelector('input[name="email[]"]');
+          const phone = form.querySelector('input[name="phone[]"]');
+
+          if (!validateInput(firstName)) isValid = false;
+          if (!validateInput(lastName)) isValid = false;
+          if (!validateInput(email)) isValid = false;
+          if (!validateInput(phone)) isValid = false;
+        });
+
+        return isValid;
       }
 
       // Form submission
@@ -656,10 +900,253 @@
         .getElementById("booking-form")
         .addEventListener("submit", function (e) {
           e.preventDefault();
-          alert(
-            "Thank you for your booking! We will contact you shortly to confirm your space journey."
-          );
+
+          if (validateForm()) {
+            alert(
+              "Thank you for your booking! We will contact you shortly to confirm your space journey."
+            );
+          }
         });
+
+      // Add passenger form
+      document
+        .getElementById("add-passenger-btn")
+        .addEventListener("click", function () {
+          if (passengerCount < maxPassengers) {
+            addPassengerForm();
+          } else {
+            showMaxPassengerModal();
+          }
+        });
+
+      // Get passenger type based on selection
+      function getPassengerType() {
+        const selected = document.querySelector(
+          'input[name="passengers"]:checked'
+        );
+        return selected ? selected.value : "solo";
+      }
+
+      // Update max passengers based on selection
+      function updateMaxPassengers() {
+        const passengerType = getPassengerType();
+
+        switch (passengerType) {
+          case "solo":
+            maxPassengers = 1;
+            break;
+          case "couple":
+            maxPassengers = 2;
+            break;
+          case "group":
+            maxPassengers = 6;
+            break;
+        }
+
+        // Update button text
+        const addButton = document.getElementById("add-passenger-btn");
+        if (passengerType === "solo") {
+          addButton.style.display = "none";
+        } else {
+          addButton.style.display = "block";
+          addButton.textContent = `Add Passenger`;
+        }
+
+        // Remove extra forms if needed
+        const passengerForms = document.querySelectorAll(".passenger-form");
+        if (passengerForms.length > maxPassengers) {
+          for (let i = passengerForms.length - 1; i >= maxPassengers; i--) {
+            passengerForms[i].remove();
+          }
+          passengerCount = maxPassengers;
+        }
+      }
+
+      // Add passenger form
+      function addPassengerForm() {
+        if (passengerCount < maxPassengers) {
+          passengerCount++;
+
+          const container = document.getElementById(
+            "passenger-forms-container"
+          );
+          const newForm = document.createElement("div");
+          newForm.className = "passenger-form";
+          newForm.id = `passenger-form-${passengerCount}`;
+
+          newForm.innerHTML = `
+        <div class="passenger-header">
+          <h3 class="font-orbitron text-neon-blue">Passenger ${passengerCount}</h3>
+          <div class="remove-passenger" data-index="${passengerCount}">
+            <i class="fas fa-times"></i>
+          </div>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <!-- First Name -->
+          <div>
+            <label class="block mb-2 text-gray-300">First Name</label>
+            <input
+              type="text"
+              name="first-name[]"
+              placeholder="Enter passenger first name"
+              required
+              data-validation="name"
+            />
+            <div class="error-message" data-error="first-name"></div>
+          </div>
+
+          <!-- Last Name -->
+          <div>
+            <label class="block mb-2 text-gray-300">Last Name</label>
+            <input
+              type="text"
+              name="last-name[]"
+              placeholder="Enter passenger last name"
+              required
+              data-validation="name"
+            />
+            <div class="error-message" data-error="last-name"></div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <!-- Email -->
+          <div>
+            <label class="block mb-2 text-gray-300">Email Address</label>
+            <input
+              type="email"
+              name="email[]"
+              placeholder="Enter passenger email"
+              required
+              data-validation="email"
+            />
+            <div class="error-message" data-error="email"></div>
+          </div>
+
+          <!-- Phone -->
+          <div>
+            <label class="block mb-2 text-gray-300">Phone Number</label>
+            <input
+              type="tel"
+              name="phone[]"
+              placeholder="Enter passenger phone number"
+              required
+              data-validation="phone"
+            />
+            <div class="error-message" data-error="phone"></div>
+          </div>
+        </div>
+
+        <!-- Special Requirements -->
+        <div class="mb-6">
+          <label class="block mb-2 text-gray-300"
+            >Special Requirements</label
+          >
+          <textarea
+            class="pl-3 pt-1"
+            name="special-requirements[]"
+            rows="4"
+            placeholder="Any special requirements or notes..."
+          ></textarea>
+        </div>
+      `;
+
+          container.appendChild(newForm);
+
+          // Update button text
+          document.getElementById(
+            "add-passenger-btn"
+          ).textContent = `Add Passenger`;
+
+          // Setup validation for new inputs
+          setupInputValidation();
+
+          // Add event listener for remove button
+          const removeButton = newForm.querySelector(".remove-passenger");
+          removeButton.addEventListener("click", function () {
+            const index = parseInt(this.getAttribute("data-index"));
+            removePassengerForm(index);
+          });
+        }
+      }
+
+      // Remove passenger form
+      function removePassengerForm(index) {
+        const formToRemove = document.getElementById(`passenger-form-${index}`);
+        if (formToRemove) {
+          formToRemove.remove();
+          passengerCount--;
+
+          // Update button text
+          document.getElementById(
+            "add-passenger-btn"
+          ).textContent = `Add Passenger (${passengerCount}/${maxPassengers})`;
+
+          // Renumber remaining forms
+          const passengerForms = document.querySelectorAll(".passenger-form");
+          passengerForms.forEach((form, i) => {
+            if (i > 0) {
+              // Skip primary passenger
+              form.id = `passenger-form-${i + 1}`;
+              const header = form.querySelector(".passenger-header h3");
+              header.textContent = `Passenger ${i + 1}`;
+
+              const removeButton = form.querySelector(".remove-passenger");
+              removeButton.setAttribute("data-index", i + 1);
+            }
+          });
+        }
+      }
+
+      // Show max passenger modal
+      function showMaxPassengerModal() {
+        // Create modal if it doesn't exist
+        let modal = document.getElementById("max-passenger-modal");
+
+        if (!modal) {
+          modal = document.createElement("div");
+          modal.id = "max-passenger-modal";
+          modal.className =
+            "fixed inset-0 flex items-center justify-center z-50 bg-black/70 backdrop-blur-sm";
+          modal.innerHTML = `
+        <div class="form-container max-w-md mx-4 p-6 relative">
+          <div class="text-center mb-6">
+            <div class="w-16 h-16 rounded-full bg-gradient-to-r from-neon-blue to-neon-purple flex items-center justify-center mx-auto mb-4 glow">
+              <i class="fas fa-users text-white text-xl"></i>
+            </div>
+            <h3 class="font-orbitron text-2xl mb-2 text-glow">Maximum Passengers Reached</h3>
+            <p class="text-gray-300">You've reached the maximum number of passengers for ${getPassengerType()} travel (${maxPassengers} ${
+            maxPassengers === 1 ? "person" : "people"
+          }).</p>
+          </div>
+          <div class="flex justify-center">
+            <button id="modal-ok-btn" class="btn-primary text-white px-6 py-3 rounded-lg font-bold">
+              Understood
+            </button>
+          </div>
+        </div>
+      `;
+          document.body.appendChild(modal);
+
+          // Add event listener for the OK button
+          document
+            .getElementById("modal-ok-btn")
+            .addEventListener("click", function () {
+              modal.remove();
+            });
+
+          // Close modal when clicking outside
+          modal.addEventListener("click", function (e) {
+            if (e.target === modal) {
+              modal.remove();
+            }
+          });
+        }
+
+        // Show the modal
+        modal.style.display = "flex";
+      }
 
       // Load accommodations from JSON
       async function loadAccommodations() {
@@ -799,23 +1286,23 @@
           card.dataset.type = acc.id;
 
           card.innerHTML = `
-            <h3 class="font-orbitron text-neon-blue mb-2">${acc.name}</h3>
-            <p class="text-sm text-gray-400">${acc.shortDescription}</p>
-            <div class="mt-3 text-xs text-gray-500">
-              <div class="flex justify-between mb-1">
-                <span>Size:</span>
-                <span>${acc.size}</span>
-              </div>
-              <div class="flex justify-between mb-1">
-                <span>Occupancy:</span>
-                <span>${acc.occupancy}</span>
-              </div>
-              <div class="flex justify-between">
-                <span>Price:</span>
-                <span class="font-bold text-neon-cyan">$${acc.pricePerDay}/day</span>
-              </div>
-            </div>
-          `;
+        <h3 class="font-orbitron text-neon-blue mb-2">${acc.name}</h3>
+        <p class="text-sm text-gray-400">${acc.shortDescription}</p>
+        <div class="mt-3 text-xs text-gray-500">
+          <div class="flex justify-between mb-1">
+            <span>Size:</span>
+            <span>${acc.size}</span>
+          </div>
+          <div class="flex justify-between mb-1">
+            <span>Occupancy:</span>
+            <span>${acc.occupancy}</span>
+          </div>
+          <div class="flex justify-between">
+            <span>Price:</span>
+            <span class="font-bold text-neon-cyan">$${acc.pricePerDay}/day</span>
+          </div>
+        </div>
+      `;
 
           accommodationsContainer.appendChild(card);
         });
@@ -833,9 +1320,230 @@
       document.addEventListener("DOMContentLoaded", async function () {
         createStars();
 
+        // Setup passenger selection change
+        const passengerRadios = document.querySelectorAll(
+          'input[name="passengers"]'
+        );
+        passengerRadios.forEach((radio) => {
+          radio.addEventListener("change", function () {
+            updateMaxPassengers();
+          });
+        });
+
+        // Initialize max passengers
+        updateMaxPassengers();
+
+        // Setup input validation
+        setupInputValidation();
+
         // Load both accommodations and destinations
         await loadAccommodations();
         await loadDestinations();
+      });
+
+      // Save form data to localStorage
+      function saveFormData() {
+        const formData = {
+          destination: document.getElementById("destination").value,
+          departureDate: document.getElementById("departure-date").value,
+          passengers: document.querySelector('input[name="passengers"]:checked')
+            .value,
+          accommodation: document.getElementById("accommodation").value,
+          passengerForms: [],
+        };
+
+        // Save passenger form data
+        const passengerForms = document.querySelectorAll(".passenger-form");
+        passengerForms.forEach((form, index) => {
+          const passengerData = {
+            firstName: form.querySelector('input[name="first-name[]"]').value,
+            lastName: form.querySelector('input[name="last-name[]"]').value,
+            email: form.querySelector('input[name="email[]"]').value,
+            phone: form.querySelector('input[name="phone[]"]').value,
+            specialRequirements: form.querySelector(
+              'textarea[name="special-requirements[]"]'
+            ).value,
+          };
+          formData.passengerForms.push(passengerData);
+        });
+
+        localStorage.setItem("bookingFormData", JSON.stringify(formData));
+      }
+
+      // Restore form data from localStorage
+      function restoreFormData() {
+        const savedData = localStorage.getItem("bookingFormData");
+        if (!savedData) return;
+
+        const formData = JSON.parse(savedData);
+
+        // Restore basic form fields
+        if (formData.destination) {
+          document.getElementById("destination").value = formData.destination;
+          // Trigger change event to load accommodations
+          document
+            .getElementById("destination")
+            .dispatchEvent(new Event("change"));
+        }
+
+        if (formData.departureDate) {
+          document.getElementById("departure-date").value =
+            formData.departureDate;
+        }
+
+        if (formData.passengers) {
+          const passengerRadio = document.querySelector(
+            `input[name="passengers"][value="${formData.passengers}"]`
+          );
+          if (passengerRadio) {
+            passengerRadio.checked = true;
+            updateMaxPassengers();
+          }
+        }
+
+        // Restore passenger forms after a delay to ensure accommodations are loaded
+        setTimeout(() => {
+          if (formData.accommodation) {
+            document.getElementById("accommodation").value =
+              formData.accommodation;
+            // Select the accommodation card
+            const accommodationCard = document.querySelector(
+              `.accommodation-card[data-type="${formData.accommodation}"]`
+            );
+            if (accommodationCard) {
+              document
+                .querySelectorAll(".accommodation-card")
+                .forEach((card) => card.classList.remove("selected"));
+              accommodationCard.classList.add("selected");
+            }
+          }
+
+          // Restore passenger forms
+          if (formData.passengerForms && formData.passengerForms.length > 0) {
+            // Remove all passenger forms except the primary one
+            const passengerForms = document.querySelectorAll(".passenger-form");
+            for (let i = passengerForms.length - 1; i > 0; i--) {
+              passengerForms[i].remove();
+            }
+
+            // Restore primary passenger data
+            const primaryPassenger = formData.passengerForms[0];
+            if (primaryPassenger) {
+              const primaryForm = document.getElementById("passenger-form-0");
+              primaryForm.querySelector('input[name="first-name[]"]').value =
+                primaryPassenger.firstName || "";
+              primaryForm.querySelector('input[name="last-name[]"]').value =
+                primaryPassenger.lastName || "";
+              primaryForm.querySelector('input[name="email[]"]').value =
+                primaryPassenger.email || "";
+              primaryForm.querySelector('input[name="phone[]"]').value =
+                primaryPassenger.phone || "";
+              primaryForm.querySelector(
+                'textarea[name="special-requirements[]"]'
+              ).value = primaryPassenger.specialRequirements || "";
+            }
+
+            // Add and restore additional passenger forms
+            for (let i = 1; i < formData.passengerForms.length; i++) {
+              if (i < maxPassengers) {
+                addPassengerForm();
+                const passengerData = formData.passengerForms[i];
+                const passengerForm = document.getElementById(
+                  `passenger-form-${i + 1}`
+                );
+
+                if (passengerForm && passengerData) {
+                  passengerForm.querySelector(
+                    'input[name="first-name[]"]'
+                  ).value = passengerData.firstName || "";
+                  passengerForm.querySelector(
+                    'input[name="last-name[]"]'
+                  ).value = passengerData.lastName || "";
+                  passengerForm.querySelector('input[name="email[]"]').value =
+                    passengerData.email || "";
+                  passengerForm.querySelector('input[name="phone[]"]').value =
+                    passengerData.phone || "";
+                  passengerForm.querySelector(
+                    'textarea[name="special-requirements[]"]'
+                  ).value = passengerData.specialRequirements || "";
+                }
+              }
+            }
+          }
+        }, 500); // Delay to ensure accommodations are loaded
+      }
+
+      // Clear form data from localStorage (optional - can be called after successful submission)
+      function clearFormData() {
+        localStorage.removeItem("bookingFormData");
+      }
+
+      // Add event listeners to save form data on input
+      function setupAutoSave() {
+        // Save on input for text fields
+        document
+          .querySelectorAll("input, select, textarea")
+          .forEach((element) => {
+            element.addEventListener("input", saveFormData);
+            element.addEventListener("change", saveFormData);
+          });
+
+        // Save on radio button change
+        document.querySelectorAll('input[type="radio"]').forEach((radio) => {
+          radio.addEventListener("change", saveFormData);
+        });
+
+        // Save when accommodation is selected
+        document.addEventListener("click", function (e) {
+          if (e.target.closest(".accommodation-card")) {
+            setTimeout(saveFormData, 100);
+          }
+        });
+      }
+
+      // Update your existing form submission to clear saved data
+      document
+        .getElementById("booking-form")
+        .addEventListener("submit", function (e) {
+          e.preventDefault();
+
+          if (validateForm()) {
+            // Clear saved form data on successful submission
+            clearFormData();
+            alert(
+              "Thank you for your booking! We will contact you shortly to confirm your space journey."
+            );
+          }
+        });
+
+      // Update your existing DOMContentLoaded event listener
+      document.addEventListener("DOMContentLoaded", async function () {
+        createStars();
+
+        // Setup passenger selection change
+        const passengerRadios = document.querySelectorAll(
+          'input[name="passengers"]'
+        );
+        passengerRadios.forEach((radio) => {
+          radio.addEventListener("change", function () {
+            updateMaxPassengers();
+            saveFormData(); // Save when passenger count changes
+          });
+        });
+
+        // Initialize max passengers
+        updateMaxPassengers();
+
+        // Setup input validation
+        setupInputValidation();
+
+        // Load both accommodations and destinations
+        await loadAccommodations();
+        await loadDestinations();
+
+        // Setup auto-save and restore form data
+        setupAutoSave();
+        restoreFormData();
       });
     </script>
   </body>
