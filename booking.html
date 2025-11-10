@@ -214,6 +214,14 @@
       .destination-info.hidden {
         display: none;
       }
+
+      .accommodations-section {
+        display: none;
+      }
+
+      .accommodations-section.visible {
+        display: block;
+      }
     </style>
   </head>
   <body class="text-white font-exo min-h-screen">
@@ -423,33 +431,18 @@
             </div>
 
             <!-- Accommodation Type -->
-            <div class="mb-6">
+            <div
+              class="mb-6 accommodations-section"
+              id="accommodations-section"
+            >
               <label class="block mb-3 text-gray-300">Accommodation Type</label>
-              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div class="accommodation-card selected" data-type="standard">
-                  <h3 class="font-orbitron text-neon-blue mb-2">
-                    Standard Cabin
-                  </h3>
-                  <p class="text-sm text-gray-400">
-                    Comfortable private quarters with basic amenities
-                  </p>
-                </div>
-                <div class="accommodation-card" data-type="luxury">
-                  <h3 class="font-orbitron text-neon-blue mb-2">
-                    Luxury Suite
-                  </h3>
-                  <p class="text-sm text-gray-400">
-                    Spacious suite with premium amenities and viewports
-                  </p>
-                </div>
-                <div class="accommodation-card" data-type="zero-g">
-                  <h3 class="font-orbitron text-neon-blue mb-2">Zero-G Pod</h3>
-                  <p class="text-sm text-gray-400">
-                    Advanced accommodation with zero-gravity experience
-                  </p>
-                </div>
+              <div
+                id="accommodations-container"
+                class="grid grid-cols-1 md:grid-cols-3 gap-4"
+              >
+                <!-- Accommodation cards will be populated by JavaScript -->
               </div>
-              <input type="hidden" id="accommodation" value="standard" />
+              <input type="hidden" id="accommodation" value="" />
             </div>
           </div>
 
@@ -608,6 +601,10 @@
     </footer>
 
     <script>
+      // Global variables to store data
+      let accommodationsData = [];
+      let destinationsData = [];
+
       // Create stars background
       function createStars() {
         const container = document.getElementById("stars-container");
@@ -639,18 +636,20 @@
         });
 
       // Accommodation card selection
-      const accommodationCards = document.querySelectorAll(
-        ".accommodation-card"
-      );
-      const accommodationInput = document.getElementById("accommodation");
+      function setupAccommodationCardSelection() {
+        const accommodationCards = document.querySelectorAll(
+          ".accommodation-card"
+        );
+        const accommodationInput = document.getElementById("accommodation");
 
-      accommodationCards.forEach((card) => {
-        card.addEventListener("click", function () {
-          accommodationCards.forEach((c) => c.classList.remove("selected"));
-          this.classList.add("selected");
-          accommodationInput.value = this.dataset.type;
+        accommodationCards.forEach((card) => {
+          card.addEventListener("click", function () {
+            accommodationCards.forEach((c) => c.classList.remove("selected"));
+            this.classList.add("selected");
+            accommodationInput.value = this.dataset.type;
+          });
         });
-      });
+      }
 
       // Form submission
       document
@@ -662,18 +661,38 @@
           );
         });
 
+      // Load accommodations from JSON
+      async function loadAccommodations() {
+        try {
+          const response = await fetch("accommodations.json");
+
+          if (!response.ok) {
+            throw new Error(
+              `Failed to load accommodations: ${response.status}`
+            );
+          }
+
+          const data = await response.json();
+          accommodationsData = data.accommodations;
+
+          console.log("Accommodations loaded:", accommodationsData);
+        } catch (error) {
+          console.error("Error loading accommodations:", error);
+          alert("Unable to load accommodations. Please try again later.");
+        }
+      }
+
       // Load destinations from JSON
       async function loadDestinations() {
         try {
-          // Fetch from your destinations.json file
           const response = await fetch("destinations.json");
 
-          // Check if the response is successful
           if (!response.ok) {
             throw new Error(`Failed to load destinations: ${response.status}`);
           }
 
           const data = await response.json();
+          destinationsData = data.destinations;
 
           const destinationSelect = document.getElementById("destination");
 
@@ -683,7 +702,7 @@
           }
 
           // Add destinations from JSON
-          data.destinations.forEach((dest) => {
+          destinationsData.forEach((dest) => {
             const option = document.createElement("option");
             option.value = dest.id;
             option.textContent = `${dest.name} - ${
@@ -697,6 +716,9 @@
           destinationSelect.addEventListener("change", function () {
             const selectedOption = this.options[this.selectedIndex];
             const destinationInfo = document.getElementById("destination-info");
+            const accommodationsSection = document.getElementById(
+              "accommodations-section"
+            );
 
             if (selectedOption.value) {
               const dest = JSON.parse(
@@ -724,9 +746,14 @@
 
               // Show the destination info
               destinationInfo.classList.remove("hidden");
+
+              // Show and populate accommodations for this destination
+              showAccommodationsForDestination(dest);
+              accommodationsSection.classList.add("visible");
             } else {
-              // Hide the destination info
+              // Hide the destination info and accommodations
               destinationInfo.classList.add("hidden");
+              accommodationsSection.classList.remove("visible");
             }
           });
         } catch (error) {
@@ -744,10 +771,71 @@
           alert("Unable to load destinations. Please try again later.");
         }
       }
+
+      // Show accommodations for selected destination
+      function showAccommodationsForDestination(destination) {
+        const accommodationsContainer = document.getElementById(
+          "accommodations-container"
+        );
+        const accommodationInput = document.getElementById("accommodation");
+
+        // Clear existing accommodation cards
+        accommodationsContainer.innerHTML = "";
+
+        // Get available accommodation IDs for this destination
+        const availableAccommodationIds = destination.accommodations || [];
+
+        // Filter accommodations to show only those available at this destination
+        const availableAccommodations = accommodationsData.filter((acc) =>
+          availableAccommodationIds.includes(acc.id)
+        );
+
+        // Create accommodation cards
+        availableAccommodations.forEach((acc, index) => {
+          const card = document.createElement("div");
+          card.className = `accommodation-card ${
+            index === 0 ? "selected" : ""
+          }`;
+          card.dataset.type = acc.id;
+
+          card.innerHTML = `
+            <h3 class="font-orbitron text-neon-blue mb-2">${acc.name}</h3>
+            <p class="text-sm text-gray-400">${acc.shortDescription}</p>
+            <div class="mt-3 text-xs text-gray-500">
+              <div class="flex justify-between mb-1">
+                <span>Size:</span>
+                <span>${acc.size}</span>
+              </div>
+              <div class="flex justify-between mb-1">
+                <span>Occupancy:</span>
+                <span>${acc.occupancy}</span>
+              </div>
+              <div class="flex justify-between">
+                <span>Price:</span>
+                <span class="font-bold text-neon-cyan">$${acc.pricePerDay}/day</span>
+              </div>
+            </div>
+          `;
+
+          accommodationsContainer.appendChild(card);
+        });
+
+        // Set the first accommodation as selected by default
+        if (availableAccommodations.length > 0) {
+          accommodationInput.value = availableAccommodations[0].id;
+        }
+
+        // Set up event listeners for the new accommodation cards
+        setupAccommodationCardSelection();
+      }
+
       // Initialize on page load
-      document.addEventListener("DOMContentLoaded", function () {
+      document.addEventListener("DOMContentLoaded", async function () {
         createStars();
-        loadDestinations();
+
+        // Load both accommodations and destinations
+        await loadAccommodations();
+        await loadDestinations();
       });
     </script>
   </body>
