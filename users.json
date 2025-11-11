@@ -1,0 +1,39 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "name": "Alex Johnson",
+      "email": "alex.johnson@email.com",
+      "password": "space2023!",
+      "reservations": [101, 103]
+    },
+    {
+      "id": 2,
+      "name": "Sarah Chen",
+      "email": "sarah.chen@email.com",
+      "password": "voyager*456",
+      "reservations": []
+    },
+    {
+      "id": 3,
+      "name": "Marcus Rivera",
+      "email": "marcus.r@email.com",
+      "password": "marsBound789",
+      "reservations": []
+    },
+    {
+      "id": 4,
+      "name": "Priya Patel",
+      "email": "priya.patel@email.com",
+      "password": "stellar!2024",
+      "reservations": []
+    },
+    {
+      "id": 5,
+      "name": "David Kim",
+      "email": "david.kim@email.com",
+      "password": "cosmicTravel1",
+      "reservations": []
+    }
+  ]
+}
