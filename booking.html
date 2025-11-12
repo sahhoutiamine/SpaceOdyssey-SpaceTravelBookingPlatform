@@ -967,24 +967,51 @@
               removePassengerForm(passengerCount);
             }
           } else if (passengerType === "couple") {
+            // For couple, ensure we have exactly 2 forms
             if (currentForms < 2) {
-              // Add one more form for couple
-              addPassengerForm();
+              // Add forms until we have 2
+              while (passengerCount < 2) {
+                addPassengerForm(false); // false means no delete button
+              }
             } else if (currentForms > 2) {
               // Remove extra forms for couple
               while (passengerCount > 2) {
                 removePassengerForm(passengerCount);
               }
             }
+
+            // Ensure no delete buttons on couple forms
+            const coupleForms = document.querySelectorAll(".passenger-form");
+            coupleForms.forEach((form, index) => {
+              const removeButton = form.querySelector(".remove-passenger");
+              if (removeButton) {
+                removeButton.remove();
+              }
+            });
           } else if (passengerType === "group") {
-            // Ensure minimum of 1 form for group
-            if (currentForms < 1) {
-              addPassengerForm();
+            // For group, ensure we have exactly 3 forms by default
+            if (currentForms < 3) {
+              // Add forms until we have 3
+              while (passengerCount < 3) {
+                addPassengerForm(false); // false means no delete button
+              }
+            } else if (currentForms > 3) {
+              // Remove extra forms for group (only if more than max)
+              while (passengerCount > maxPassengers) {
+                removePassengerForm(passengerCount);
+              }
             }
-            // Remove forms if they exceed max (shouldn't happen, but safety check)
-            while (passengerCount > maxPassengers) {
-              removePassengerForm(passengerCount);
-            }
+
+            // Ensure no delete buttons on the first 3 group forms
+            const groupForms = document.querySelectorAll(".passenger-form");
+            groupForms.forEach((form, index) => {
+              if (index < 3) {
+                const removeButton = form.querySelector(".remove-passenger");
+                if (removeButton) {
+                  removeButton.remove();
+                }
+              }
+            });
           }
 
           // Update button after forms are updated
@@ -1041,13 +1068,13 @@
         .getElementById("add-passenger-btn")
         .addEventListener("click", function () {
           if (passengerCount < maxPassengers) {
-            addPassengerForm();
+            addPassengerForm(true); // true means show delete button
             updatePriceCalculation(); // Update price when passenger is added
           }
         });
 
       // Add passenger form with safety checks
-      function addPassengerForm() {
+      function addPassengerForm(showDeleteButton = true) {
         if (passengerCount >= maxPassengers) {
           console.warn(
             `Cannot add passenger: ${passengerCount} >= ${maxPassengers}`
@@ -1067,7 +1094,7 @@
     <div class="passenger-header">
       <h3 class="font-orbitron text-neon-blue">Passenger ${passengerCount}</h3>
       ${
-        passengerCount > 1
+        passengerCount > 1 && showDeleteButton
           ? `<div class="remove-passenger" data-index="${passengerCount}">
         <i class="fas fa-times"></i>
       </div>`
@@ -1615,7 +1642,7 @@
               passengerForms: [],
             };
 
-            // Save passenger form data
+            // Save ALL passenger form data
             const passengerForms = document.querySelectorAll(".passenger-form");
             passengerForms.forEach((form, index) => {
               const passengerData = {
@@ -1730,42 +1757,27 @@
               }
             }
 
-            // Restore passenger forms
+            // Restore ALL passenger forms
             if (
               bookingData.passengerForms &&
               bookingData.passengerForms.length > 0
             ) {
-              // Remove all passenger forms except the primary one
-              const passengerForms =
+              // Remove all existing passenger forms
+              const existingForms =
                 document.querySelectorAll(".passenger-form");
-              for (let i = passengerForms.length - 1; i > 0; i--) {
-                passengerForms[i].remove();
-              }
+              existingForms.forEach((form) => form.remove());
+              passengerCount = 0;
 
-              // Restore primary passenger data
-              const primaryPassenger = bookingData.passengerForms[0];
-              if (primaryPassenger) {
-                const primaryForm = document.getElementById("passenger-form-0");
-                primaryForm.querySelector('input[name="first-name[]"]').value =
-                  primaryPassenger.firstName || "";
-                primaryForm.querySelector('input[name="last-name[]"]').value =
-                  primaryPassenger.lastName || "";
-                primaryForm.querySelector('input[name="email[]"]').value =
-                  primaryPassenger.email || "";
-                primaryForm.querySelector('input[name="phone[]"]').value =
-                  primaryPassenger.phone || "";
-                primaryForm.querySelector(
-                  'textarea[name="special-requirements[]"]'
-                ).value = primaryPassenger.specialRequirements || "";
-              }
+              // Add forms for all passengers in the pending booking
+              bookingData.passengerForms.forEach((passengerData, index) => {
+                if (index < maxPassengers) {
+                  // For couple and group, don't show delete buttons on default forms
+                  const showDeleteButton =
+                    bookingData.passengers === "group" && index >= 3;
 
-              // Add and restore additional passenger forms
-              for (let i = 1; i < bookingData.passengerForms.length; i++) {
-                if (i < maxPassengers) {
-                  addPassengerForm();
-                  const passengerData = bookingData.passengerForms[i];
+                  addPassengerForm(showDeleteButton);
                   const passengerForm = document.getElementById(
-                    `passenger-form-${i}`
+                    `passenger-form-${index + 1}`
                   );
 
                   if (passengerForm && passengerData) {
@@ -1784,7 +1796,7 @@
                     ).value = passengerData.specialRequirements || "";
                   }
                 }
-              }
+              });
             }
 
             updatePriceCalculation(); // Update price after restoring pending booking
