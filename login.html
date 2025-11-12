@@ -125,6 +125,17 @@
         border-color: #ef4444 !important;
         box-shadow: 0 0 5px rgba(239, 68, 68, 0.3) !important;
       }
+
+      /* Mobile Menu Animation */
+      .mobile-menu {
+        transition: all 0.3s ease;
+        max-height: 0;
+        overflow: hidden;
+      }
+
+      .mobile-menu.open {
+        max-height: 300px;
+      }
     </style>
   </head>
   <body class="text-white font-exo min-h-screen">
@@ -170,18 +181,61 @@
             class="nav-link hover:text-neon-blue transition-colors"
             >About</a
           >
+          <a
+            href="login.html"
+            class="nav-link hover:text-neon-blue transition-colors text-neon-blue"
+            >Login</a
+          >
           <span
             id="auth-link"
-            class="nav-link hover:text-neon-blue transition-colors text-neon-blue cursor-pointer"
+            class="nav-link hover:text-neon-blue transition-colors cursor-pointer"
           >
-            Login
           </span>
         </div>
 
+        <!-- Mobile menu button -->
         <div class="md:hidden">
-          <button class="text-white focus:outline-none">
+          <button id="mobile-menu-button" class="text-white focus:outline-none">
             <i class="fas fa-bars text-xl"></i>
           </button>
+        </div>
+      </div>
+
+      <!-- Mobile Menu -->
+      <div
+        id="mobile-menu"
+        class="mobile-menu md:hidden bg-space-dark/90 backdrop-blur-md"
+      >
+        <div class="container mx-auto px-4 py-3 flex flex-col space-y-4">
+          <a
+            href="index.html"
+            class="hover:text-neon-blue transition-colors py-2 border-b border-neon-blue/20"
+            >Home</a
+          >
+          <a
+            href="destinations.html"
+            class="hover:text-neon-blue transition-colors py-2 border-b border-neon-blue/20"
+            >Destinations</a
+          >
+          <a
+            href="booking.html"
+            class="hover:text-neon-blue transition-colors py-2 border-b border-neon-blue/20"
+            >Booking</a
+          >
+          <a
+            href="about.html"
+            class="hover:text-neon-blue transition-colors py-2 border-b border-neon-blue/20"
+            >About</a
+          >
+          <a
+            href="login.html"
+            class="hover:text-neon-blue transition-colors py-2 border-b border-neon-blue/20 text-neon-blue"
+            >Login</a
+          >
+          <span
+            id="mobile-auth-link"
+            class="hover:text-neon-blue transition-colors py-2 cursor-pointer"
+          ></span>
         </div>
       </div>
     </nav>
@@ -370,6 +424,14 @@
         }
       }
 
+      // Mobile menu toggle
+      document
+        .getElementById("mobile-menu-button")
+        .addEventListener("click", function () {
+          const menu = document.getElementById("mobile-menu");
+          menu.classList.toggle("open");
+        });
+
       // Load users from JSON and save to localStorage
       async function loadUsersToLocalStorage() {
         try {
@@ -415,26 +477,29 @@
       // Update navigation based on login status
       function updateNavigation() {
         const authLink = document.getElementById("auth-link");
-        if (!authLink) return;
+        const mobileAuthLink = document.getElementById("mobile-auth-link");
 
         const currentUser = JSON.parse(
           localStorage.getItem("currentUser") || "null"
         );
 
         if (currentUser) {
-          // User is logged in - show logout
-          authLink.innerHTML = `Log Out (${currentUser.name})`;
-          authLink.onclick = handleLogout;
-        } else {
-          // User is not logged in - show login
-          authLink.innerHTML = "Login";
-          authLink.onclick = null;
-          authLink.href = "login.html";
+          // User is logged in - show logout with user name
+          const displayText = `Log Out (${currentUser.name})`;
+          if (authLink) {
+            authLink.innerHTML = displayText;
+            authLink.onclick = handleLogout;
+          }
+          if (mobileAuthLink) {
+            mobileAuthLink.innerHTML = displayText;
+            mobileAuthLink.onclick = handleLogout;
+          }
         }
       }
 
       // Handle logout
-      function handleLogout() {
+      function handleLogout(e) {
+        e.preventDefault();
         localStorage.removeItem("currentUser");
         localStorage.removeItem("pendingBooking");
         window.location.href = "login.html";
@@ -494,7 +559,7 @@
       document.addEventListener("DOMContentLoaded", function () {
         createStars();
         loadUsersToLocalStorage();
-        updateNavigation(); // Add this line
+        updateNavigation();
 
         // Check if user is already logged in
         const currentUser = localStorage.getItem("currentUser");

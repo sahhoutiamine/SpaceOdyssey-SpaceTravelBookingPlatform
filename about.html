@@ -167,14 +167,18 @@
           >
           <a
             href="about.html"
-            class="nav-link hover:text-neon-blue transition-colors"
+            class="nav-link hover:text-neon-blue transition-colors text-neon-blue"
             >About</a
+          >
+          <a
+            href="login.html"
+            class="nav-link hover:text-neon-blue transition-colors"
+            >Login</a
           >
           <span
             id="auth-link"
             class="nav-link hover:text-neon-blue transition-colors cursor-pointer"
           >
-            Login
           </span>
         </div>
 
@@ -209,18 +213,21 @@
           >
           <a
             href="about.html"
-            class="hover:text-neon-blue transition-colors py-2 border-b border-neon-blue/20"
+            class="hover:text-neon-blue transition-colors py-2 border-b border-neon-blue/20 text-neon-blue"
             >About</a
+          >
+          <a
+            href="login.html"
+            class="hover:text-neon-blue transition-colors py-2 border-b border-neon-blue/20"
+            >Login</a
           >
           <span
             id="mobile-auth-link"
             class="hover:text-neon-blue transition-colors py-2 cursor-pointer"
-            >Login</span
-          >
+          ></span>
         </div>
       </div>
     </nav>
-
     <!-- Main Content -->
     <main class="container mx-auto px-4 py-8 relative z-10">
       <!-- Page Header -->
@@ -543,18 +550,6 @@
           if (mobileAuthLink) {
             mobileAuthLink.innerHTML = displayText;
             mobileAuthLink.onclick = handleLogout;
-          }
-        } else {
-          // User is not logged in - show login
-          if (authLink) {
-            authLink.innerHTML = "Login";
-            authLink.onclick = null;
-            authLink.href = "login.html";
-          }
-          if (mobileAuthLink) {
-            mobileAuthLink.innerHTML = "Login";
-            mobileAuthLink.onclick = null;
-            mobileAuthLink.href = "login.html";
           }
         }
       }
