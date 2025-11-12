@@ -730,14 +730,6 @@
         }
       }
 
-      // Mobile menu toggle
-      document
-        .getElementById("mobile-menu-button")
-        .addEventListener("click", function () {
-          const menu = document.getElementById("mobile-menu");
-          menu.classList.toggle("open");
-        });
-
       // Accommodation card selection
       function setupAccommodationCardSelection() {
         const accommodationCards = document.querySelectorAll(
@@ -1584,37 +1576,6 @@
         return reservationId;
       }
 
-      // Update navigation based on login status
-      function updateNavigation() {
-        const authLink = document.getElementById("auth-link");
-        const mobileAuthLink = document.getElementById("mobile-auth-link");
-
-        const currentUser = JSON.parse(
-          localStorage.getItem("currentUser") || "null"
-        );
-
-        if (currentUser) {
-          // User is logged in - show logout with user name
-          const displayText = `Log Out (${currentUser.name})`;
-          if (authLink) {
-            authLink.innerHTML = displayText;
-            authLink.onclick = handleLogout;
-          }
-          if (mobileAuthLink) {
-            mobileAuthLink.innerHTML = displayText;
-            mobileAuthLink.onclick = handleLogout;
-          }
-        }
-      }
-
-      // Handle logout
-      function handleLogout(e) {
-        e.preventDefault();
-        localStorage.removeItem("currentUser");
-        localStorage.removeItem("pendingBooking");
-        window.location.href = "login.html";
-      }
-
       // Update form submission handler in your booking page
       document
         .getElementById("booking-form")
@@ -1828,7 +1789,6 @@
       // Update your existing DOMContentLoaded event listener in booking page
       document.addEventListener("DOMContentLoaded", async function () {
         createStars();
-        updateNavigation();
 
         // Use the new setup function for passenger radios
         setupPassengerRadioListeners();
@@ -1847,5 +1807,6 @@
         checkPendingBooking();
       });
     </script>
+    <script src="menu.js"></script>
   </body>
 </html>
