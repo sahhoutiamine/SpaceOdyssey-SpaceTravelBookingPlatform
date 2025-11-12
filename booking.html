@@ -601,6 +601,20 @@
               </button>
             </div>
           </div>
+          <!-- Total Price Display -->
+          <div
+            class="total-price-section mt-8 p-6 bg-gray-800/50 rounded-lg border border-neon-blue/30"
+          >
+            <div class="flex justify-between items-center">
+              <h3 class="font-orbitron text-neon-blue text-xl">Total Price</h3>
+              <div class="text-2xl font-bold text-neon-cyan" id="total-price">
+                $0
+              </div>
+            </div>
+            <p class="text-sm text-gray-400 mt-2">
+              Price includes destination fee + accommodation for all passengers
+            </p>
+          </div>
 
           <button
             type="submit"
@@ -679,7 +693,6 @@
         </div>
       </div>
     </footer>
-
     <script>
       // Global variables to store data
       let accommodationsData = [];
@@ -730,6 +743,7 @@
             this.classList.add("selected");
             accommodationInput.value = this.dataset.type;
             clearError("accommodation-error");
+            updatePriceCalculation(); // Update price when accommodation changes
           });
         });
       }
@@ -896,17 +910,6 @@
         return isValid;
       }
 
-      // Add passenger form
-      document
-        .getElementById("add-passenger-btn")
-        .addEventListener("click", function () {
-          if (passengerCount < maxPassengers) {
-            addPassengerForm();
-          } else {
-            showMaxPassengerModal();
-          }
-        });
-
       // Get passenger type based on selection
       function getPassengerType() {
         const selected = document.querySelector(
@@ -918,6 +921,10 @@
       // Update max passengers based on selection
       function updateMaxPassengers() {
         const passengerType = getPassengerType();
+        const addButton = document.getElementById("add-passenger-btn");
+
+        // Store previous max passengers to detect changes
+        const previousMaxPassengers = maxPassengers;
 
         switch (passengerType) {
           case "solo":
@@ -931,209 +938,358 @@
             break;
         }
 
-        // Update button text
-        const addButton = document.getElementById("add-passenger-btn");
-        if (passengerType === "solo") {
-          addButton.style.display = "none";
-        } else {
-          addButton.style.display = "block";
-          addButton.textContent = `Add Passenger`;
+        // Only update passenger forms if max passengers actually changed
+        if (previousMaxPassengers !== maxPassengers) {
+          updatePassengerForms();
         }
 
-        // Remove extra forms if needed
-        const passengerForms = document.querySelectorAll(".passenger-form");
-        if (passengerForms.length > maxPassengers) {
-          for (let i = passengerForms.length - 1; i >= maxPassengers; i--) {
-            passengerForms[i].remove();
+        // Update button visibility
+        updateAddPassengerButton();
+
+        updatePriceCalculation();
+      }
+
+      // Update passenger forms based on current selection
+      function updatePassengerForms() {
+        const passengerType = getPassengerType();
+        const currentForms =
+          document.querySelectorAll(".passenger-form").length;
+
+        console.log(
+          `Updating forms: type=${passengerType}, current=${currentForms}, max=${maxPassengers}`
+        );
+
+        // Use setTimeout to break the synchronous execution chain
+        setTimeout(() => {
+          if (passengerType === "solo") {
+            // Remove all extra forms for solo
+            while (passengerCount > 1) {
+              removePassengerForm(passengerCount);
+            }
+          } else if (passengerType === "couple") {
+            if (currentForms < 2) {
+              // Add one more form for couple
+              addPassengerForm();
+            } else if (currentForms > 2) {
+              // Remove extra forms for couple
+              while (passengerCount > 2) {
+                removePassengerForm(passengerCount);
+              }
+            }
+          } else if (passengerType === "group") {
+            // Ensure minimum of 1 form for group
+            if (currentForms < 1) {
+              addPassengerForm();
+            }
+            // Remove forms if they exceed max (shouldn't happen, but safety check)
+            while (passengerCount > maxPassengers) {
+              removePassengerForm(passengerCount);
+            }
           }
-          passengerCount = maxPassengers;
+
+          // Update button after forms are updated
+          updateAddPassengerButton();
+        }, 0);
+      }
+
+      // Separate function to update add passenger button
+      function updateAddPassengerButton() {
+        const addButton = document.getElementById("add-passenger-btn");
+        const passengerType = getPassengerType();
+
+        if (!addButton) return;
+
+        if (passengerType === "solo" || passengerType === "couple") {
+          addButton.style.display = "none";
+        } else {
+          addButton.style.display =
+            passengerCount < maxPassengers ? "block" : "none";
+          addButton.textContent = `Add Passenger`;
         }
       }
 
+      // Setup passenger radio listeners with debouncing
+      function setupPassengerRadioListeners() {
+        const passengerRadios = document.querySelectorAll(
+          'input[name="passengers"]'
+        );
+        let clickInProgress = false;
+
+        passengerRadios.forEach((radio) => {
+          radio.addEventListener("change", function () {
+            if (clickInProgress) {
+              console.log("Passenger change already in progress, skipping");
+              return;
+            }
+
+            clickInProgress = true;
+
+            try {
+              updateMaxPassengers();
+            } finally {
+              // Reset flag after a short delay to prevent rapid successive clicks
+              setTimeout(() => {
+                clickInProgress = false;
+              }, 500);
+            }
+          });
+        });
+      }
+
       // Add passenger form
+      document
+        .getElementById("add-passenger-btn")
+        .addEventListener("click", function () {
+          if (passengerCount < maxPassengers) {
+            addPassengerForm();
+            updatePriceCalculation(); // Update price when passenger is added
+          }
+        });
+
+      // Add passenger form with safety checks
       function addPassengerForm() {
-        if (passengerCount < maxPassengers) {
-          passengerCount++;
-
-          const container = document.getElementById(
-            "passenger-forms-container"
+        if (passengerCount >= maxPassengers) {
+          console.warn(
+            `Cannot add passenger: ${passengerCount} >= ${maxPassengers}`
           );
-          const newForm = document.createElement("div");
-          newForm.className = "passenger-form";
-          newForm.id = `passenger-form-${passengerCount}`;
+          updateAddPassengerButton();
+          return;
+        }
 
-          newForm.innerHTML = `
-        <div class="passenger-header">
-          <h3 class="font-orbitron text-neon-blue">Passenger ${passengerCount}</h3>
-          <div class="remove-passenger" data-index="${passengerCount}">
-            <i class="fas fa-times"></i>
-          </div>
-        </div>
-        
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          <!-- First Name -->
-          <div>
-            <label class="block mb-2 text-gray-300">First Name</label>
-            <input
-              type="text"
-              name="first-name[]"
-              placeholder="Enter passenger first name"
-              required
-              data-validation="name"
-            />
-            <div class="error-message" data-error="first-name"></div>
-          </div>
+        passengerCount++;
 
-          <!-- Last Name -->
-          <div>
-            <label class="block mb-2 text-gray-300">Last Name</label>
-            <input
-              type="text"
-              name="last-name[]"
-              placeholder="Enter passenger last name"
-              required
-              data-validation="name"
-            />
-            <div class="error-message" data-error="last-name"></div>
-          </div>
-        </div>
+        const container = document.getElementById("passenger-forms-container");
+        const newForm = document.createElement("div");
+        newForm.className = "passenger-form";
+        newForm.id = `passenger-form-${passengerCount}`;
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          <!-- Email -->
-          <div>
-            <label class="block mb-2 text-gray-300">Email Address</label>
-            <input
-              type="email"
-              name="email[]"
-              placeholder="Enter passenger email"
-              required
-              data-validation="email"
-            />
-            <div class="error-message" data-error="email"></div>
-          </div>
+        newForm.innerHTML = `
+    <div class="passenger-header">
+      <h3 class="font-orbitron text-neon-blue">Passenger ${passengerCount}</h3>
+      ${
+        passengerCount > 1
+          ? `<div class="remove-passenger" data-index="${passengerCount}">
+        <i class="fas fa-times"></i>
+      </div>`
+          : ""
+      }
+    </div>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+      <!-- First Name -->
+      <div>
+        <label class="block mb-2 text-gray-300">First Name</label>
+        <input
+          type="text"
+          name="first-name[]"
+          placeholder="Enter passenger first name"
+          required
+          data-validation="name"
+        />
+        <div class="error-message" data-error="first-name"></div>
+      </div>
 
-          <!-- Phone -->
-          <div>
-            <label class="block mb-2 text-gray-300">Phone Number</label>
-            <input
-              type="tel"
-              name="phone[]"
-              placeholder="Enter passenger phone number"
-              required
-              data-validation="phone"
-            />
-            <div class="error-message" data-error="phone"></div>
-          </div>
-        </div>
+      <!-- Last Name -->
+      <div>
+        <label class="block mb-2 text-gray-300">Last Name</label>
+        <input
+          type="text"
+          name="last-name[]"
+          placeholder="Enter passenger last name"
+          required
+          data-validation="name"
+        />
+        <div class="error-message" data-error="last-name"></div>
+      </div>
+    </div>
 
-        <!-- Special Requirements -->
-        <div class="mb-6">
-          <label class="block mb-2 text-gray-300"
-            >Special Requirements</label
-          >
-          <textarea
-            class="pl-3 pt-1"
-            name="special-requirements[]"
-            rows="4"
-            placeholder="Any special requirements or notes..."
-          ></textarea>
-        </div>
-      `;
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+      <!-- Email -->
+      <div>
+        <label class="block mb-2 text-gray-300">Email Address</label>
+        <input
+          type="email"
+          name="email[]"
+          placeholder="Enter passenger email"
+          required
+          data-validation="email"
+        />
+        <div class="error-message" data-error="email"></div>
+      </div>
 
-          container.appendChild(newForm);
+      <!-- Phone -->
+      <div>
+        <label class="block mb-2 text-gray-300">Phone Number</label>
+        <input
+          type="tel"
+          name="phone[]"
+          placeholder="Enter passenger phone number"
+          required
+          data-validation="phone"
+        />
+        <div class="error-message" data-error="phone"></div>
+      </div>
+    </div>
 
-          // Update button text
-          document.getElementById(
-            "add-passenger-btn"
-          ).textContent = `Add Passenger`;
+    <!-- Special Requirements -->
+    <div class="mb-6">
+      <label class="block mb-2 text-gray-300"
+        >Special Requirements</label
+      >
+      <textarea
+        class="pl-3 pt-1"
+        name="special-requirements[]"
+        rows="4"
+        placeholder="Any special requirements or notes..."
+      ></textarea>
+    </div>
+  `;
 
-          // Setup validation for new inputs
-          setupInputValidation();
+        container.appendChild(newForm);
 
-          // Add event listener for remove button
-          const removeButton = newForm.querySelector(".remove-passenger");
+        // Update button visibility
+        updateAddPassengerButton();
+
+        // Setup validation for new inputs
+        setupInputValidation();
+
+        // Add event listener for remove button if applicable
+        const removeButton = newForm.querySelector(".remove-passenger");
+        if (removeButton) {
           removeButton.addEventListener("click", function () {
             const index = parseInt(this.getAttribute("data-index"));
             removePassengerForm(index);
           });
         }
+
+        console.log(`Added passenger form: ${passengerCount}`);
       }
 
-      // Remove passenger form
+      // Remove passenger form with safety checks
       function removePassengerForm(index) {
         const formToRemove = document.getElementById(`passenger-form-${index}`);
-        if (formToRemove) {
-          formToRemove.remove();
-          passengerCount--;
-
-          // Update button text
-          document.getElementById(
-            "add-passenger-btn"
-          ).textContent = `Add Passenger`;
-
-          // Renumber remaining forms
-          const passengerForms = document.querySelectorAll(".passenger-form");
-          passengerForms.forEach((form, i) => {
-            if (i > 0) {
-              // Skip primary passenger
-              form.id = `passenger-form-${i + 1}`;
-              const header = form.querySelector(".passenger-header h3");
-              header.textContent = `Passenger ${i + 1}`;
-
-              const removeButton = form.querySelector(".remove-passenger");
-              removeButton.setAttribute("data-index", i + 1);
-            }
-          });
+        if (!formToRemove) {
+          console.warn(`Form ${index} not found for removal`);
+          return;
         }
+
+        formToRemove.remove();
+        passengerCount--;
+
+        // Update button visibility
+        updateAddPassengerButton();
+
+        // Renumber remaining forms
+        const passengerForms = document.querySelectorAll(".passenger-form");
+        passengerForms.forEach((form, i) => {
+          const newIndex = i + 1;
+          form.id = `passenger-form-${newIndex}`;
+          const header = form.querySelector(".passenger-header h3");
+          if (header) {
+            header.textContent = `Passenger ${newIndex}`;
+          }
+
+          const removeButton = form.querySelector(".remove-passenger");
+          if (removeButton && newIndex > 1) {
+            removeButton.setAttribute("data-index", newIndex);
+          }
+        });
+
+        updatePriceCalculation();
+        console.log(
+          `Removed passenger form: ${index}, now ${passengerCount} forms`
+        );
       }
 
-      // Show max passenger modal
-      function showMaxPassengerModal() {
-        // Create modal if it doesn't exist
-        let modal = document.getElementById("max-passenger-modal");
+      // Calculate and display total price
+      function updatePriceCalculation() {
+        const totalPriceElement = document.getElementById("total-price");
+        if (!totalPriceElement) return;
 
-        if (!modal) {
-          modal = document.createElement("div");
-          modal.id = "max-passenger-modal";
-          modal.className =
-            "fixed inset-0 flex items-center justify-center z-50 bg-black/70 backdrop-blur-sm";
-          modal.innerHTML = `
-        <div class="form-container max-w-md mx-4 p-6 relative">
-          <div class="text-center mb-6">
-            <div class="w-16 h-16 rounded-full bg-gradient-to-r from-neon-blue to-neon-purple flex items-center justify-center mx-auto mb-4 glow">
-              <i class="fas fa-users text-white text-xl"></i>
-            </div>
-            <h3 class="font-orbitron text-2xl mb-2 text-glow">Maximum Passengers Reached</h3>
-            <p class="text-gray-300">You've reached the maximum number of passengers for ${getPassengerType()} travel (${maxPassengers} ${
-            maxPassengers === 1 ? "person" : "people"
-          }).</p>
-          </div>
-          <div class="flex justify-center">
-            <button id="modal-ok-btn" class="btn-primary text-white px-6 py-3 rounded-lg font-bold">
-              Understood
-            </button>
-          </div>
-        </div>
-      `;
-          document.body.appendChild(modal);
+        // Get selected destination
+        const destinationSelect = document.getElementById("destination");
+        const selectedDestination =
+          destinationSelect.options[destinationSelect.selectedIndex];
 
-          // Add event listener for the OK button
-          document
-            .getElementById("modal-ok-btn")
-            .addEventListener("click", function () {
-              modal.remove();
-            });
-
-          // Close modal when clicking outside
-          modal.addEventListener("click", function (e) {
-            if (e.target === modal) {
-              modal.remove();
-            }
-          });
+        if (!selectedDestination.value) {
+          totalPriceElement.textContent = "$0";
+          return;
         }
 
-        // Show the modal
-        modal.style.display = "flex";
+        const destinationData = JSON.parse(
+          selectedDestination.getAttribute("data-destination")
+        );
+
+        // Get accommodation price
+        const accommodationId = document.getElementById("accommodation").value;
+        const accommodation = accommodationsData.find(
+          (acc) => acc.id === accommodationId
+        );
+
+        if (!accommodation) {
+          totalPriceElement.textContent = "$0";
+          return;
+        }
+
+        // Calculate travel duration in days based on different time formats
+        const travelDurationText = destinationData.travelDuration.toLowerCase();
+        let travelDays = 0;
+
+        // Handle different time formats
+        if (travelDurationText.includes("-")) {
+          // Handle ranges like "5-6 years"
+          const rangeMatch = travelDurationText.match(
+            /(\d+)\s*-\s*(\d+)\s*(day|month|year|days|months|years)/
+          );
+          if (rangeMatch) {
+            const minValue = parseInt(rangeMatch[1]);
+            const maxValue = parseInt(rangeMatch[2]);
+            const unit = rangeMatch[3];
+            // Use the larger value from the range
+            travelDays = convertToDays(maxValue, unit);
+          }
+        } else {
+          // Handle single values like "3 days", "5 months", "2 years"
+          const singleMatch = travelDurationText.match(
+            /(\d+)\s*(day|month|year|days|months|years)/
+          );
+          if (singleMatch) {
+            const value = parseInt(singleMatch[1]);
+            const unit = singleMatch[2];
+            travelDays = convertToDays(value, unit);
+          }
+        }
+
+        // Get number of passengers
+        const passengerCount =
+          document.querySelectorAll(".passenger-form").length;
+
+        // Calculate total price: destination price + (travel days * 2 * accommodation price * passenger count)
+        const destinationPrice = destinationData.price || 0;
+        const accommodationPrice = accommodation.pricePerDay || 0;
+
+        const totalPrice =
+          destinationPrice +
+          travelDays * 2 * accommodationPrice * passengerCount;
+
+        // Update display
+        totalPriceElement.textContent = `$${totalPrice.toLocaleString()}`;
+      }
+
+      // Helper function to convert different time units to days
+      function convertToDays(value, unit) {
+        const normalizedUnit = unit.toLowerCase().replace(/s$/, ""); // Remove trailing 's'
+
+        switch (normalizedUnit) {
+          case "day":
+            return value;
+          case "month":
+            return value * 30; // Approximate month as 30 days
+          case "year":
+            return value * 365; // Approximate year as 365 days
+          default:
+            return value; // Default to days if unknown unit
+        }
       }
 
       // Load accommodations from JSON
@@ -1225,10 +1381,13 @@
               // Show and populate accommodations for this destination
               showAccommodationsForDestination(dest);
               accommodationsSection.classList.add("visible");
+
+              updatePriceCalculation(); // Update price when destination changes
             } else {
               // Hide the destination info and accommodations
               destinationInfo.classList.add("hidden");
               accommodationsSection.classList.remove("visible");
+              updatePriceCalculation(); // Update price when destination is cleared
             }
           });
         } catch (error) {
@@ -1274,23 +1433,23 @@
           card.dataset.type = acc.id;
 
           card.innerHTML = `
-        <h3 class="font-orbitron text-neon-blue mb-2">${acc.name}</h3>
-        <p class="text-sm text-gray-400">${acc.shortDescription}</p>
-        <div class="mt-3 text-xs text-gray-500">
-          <div class="flex justify-between mb-1">
-            <span>Size:</span>
-            <span>${acc.size}</span>
-          </div>
-          <div class="flex justify-between mb-1">
-            <span>Occupancy:</span>
-            <span>${acc.occupancy}</span>
-          </div>
-          <div class="flex justify-between">
-            <span>Price:</span>
-            <span class="font-bold text-neon-cyan">$${acc.pricePerDay}/day</span>
-          </div>
-        </div>
-      `;
+    <h3 class="font-orbitron text-neon-blue mb-2">${acc.name}</h3>
+    <p class="text-sm text-gray-400">${acc.shortDescription}</p>
+    <div class="mt-3 text-xs text-gray-500">
+      <div class="flex justify-between mb-1">
+        <span>Size:</span>
+        <span>${acc.size}</span>
+      </div>
+      <div class="flex justify-between mb-1">
+        <span>Occupancy:</span>
+        <span>${acc.occupancy}</span>
+      </div>
+      <div class="flex justify-between">
+        <span>Price:</span>
+        <span class="font-bold text-neon-cyan">$${acc.pricePerDay}/day</span>
+      </div>
+    </div>
+  `;
 
           accommodationsContainer.appendChild(card);
         });
@@ -1302,166 +1461,7 @@
 
         // Set up event listeners for the new accommodation cards
         setupAccommodationCardSelection();
-      }
-
-      // Save form data to localStorage
-      function saveFormData() {
-        const formData = {
-          destination: document.getElementById("destination").value,
-          departureDate: document.getElementById("departure-date").value,
-          passengers: document.querySelector('input[name="passengers"]:checked')
-            .value,
-          accommodation: document.getElementById("accommodation").value,
-          passengerForms: [],
-        };
-
-        // Save passenger form data
-        const passengerForms = document.querySelectorAll(".passenger-form");
-        passengerForms.forEach((form, index) => {
-          const passengerData = {
-            firstName: form.querySelector('input[name="first-name[]"]').value,
-            lastName: form.querySelector('input[name="last-name[]"]').value,
-            email: form.querySelector('input[name="email[]"]').value,
-            phone: form.querySelector('input[name="phone[]"]').value,
-            specialRequirements: form.querySelector(
-              'textarea[name="special-requirements[]"]'
-            ).value,
-          };
-          formData.passengerForms.push(passengerData);
-        });
-
-        localStorage.setItem("bookingFormData", JSON.stringify(formData));
-      }
-
-      // Restore form data from localStorage
-      function restoreFormData() {
-        const savedData = localStorage.getItem("bookingFormData");
-        if (!savedData) return;
-
-        const formData = JSON.parse(savedData);
-
-        // Restore basic form fields
-        if (formData.destination) {
-          document.getElementById("destination").value = formData.destination;
-          // Trigger change event to load accommodations
-          document
-            .getElementById("destination")
-            .dispatchEvent(new Event("change"));
-        }
-
-        if (formData.departureDate) {
-          document.getElementById("departure-date").value =
-            formData.departureDate;
-        }
-
-        if (formData.passengers) {
-          const passengerRadio = document.querySelector(
-            `input[name="passengers"][value="${formData.passengers}"]`
-          );
-          if (passengerRadio) {
-            passengerRadio.checked = true;
-            updateMaxPassengers();
-          }
-        }
-
-        // Restore passenger forms after a delay to ensure accommodations are loaded
-        setTimeout(() => {
-          if (formData.accommodation) {
-            document.getElementById("accommodation").value =
-              formData.accommodation;
-            // Select the accommodation card
-            const accommodationCard = document.querySelector(
-              `.accommodation-card[data-type="${formData.accommodation}"]`
-            );
-            if (accommodationCard) {
-              document
-                .querySelectorAll(".accommodation-card")
-                .forEach((card) => card.classList.remove("selected"));
-              accommodationCard.classList.add("selected");
-            }
-          }
-
-          // Restore passenger forms
-          if (formData.passengerForms && formData.passengerForms.length > 0) {
-            // Remove all passenger forms except the primary one
-            const passengerForms = document.querySelectorAll(".passenger-form");
-            for (let i = passengerForms.length - 1; i > 0; i--) {
-              passengerForms[i].remove();
-            }
-
-            // Restore primary passenger data
-            const primaryPassenger = formData.passengerForms[0];
-            if (primaryPassenger) {
-              const primaryForm = document.getElementById("passenger-form-0");
-              primaryForm.querySelector('input[name="first-name[]"]').value =
-                primaryPassenger.firstName || "";
-              primaryForm.querySelector('input[name="last-name[]"]').value =
-                primaryPassenger.lastName || "";
-              primaryForm.querySelector('input[name="email[]"]').value =
-                primaryPassenger.email || "";
-              primaryForm.querySelector('input[name="phone[]"]').value =
-                primaryPassenger.phone || "";
-              primaryForm.querySelector(
-                'textarea[name="special-requirements[]"]'
-              ).value = primaryPassenger.specialRequirements || "";
-            }
-
-            // Add and restore additional passenger forms
-            for (let i = 1; i < formData.passengerForms.length; i++) {
-              if (i < maxPassengers) {
-                addPassengerForm();
-                const passengerData = formData.passengerForms[i];
-                const passengerForm = document.getElementById(
-                  `passenger-form-${i + 1}`
-                );
-
-                if (passengerForm && passengerData) {
-                  passengerForm.querySelector(
-                    'input[name="first-name[]"]'
-                  ).value = passengerData.firstName || "";
-                  passengerForm.querySelector(
-                    'input[name="last-name[]"]'
-                  ).value = passengerData.lastName || "";
-                  passengerForm.querySelector('input[name="email[]"]').value =
-                    passengerData.email || "";
-                  passengerForm.querySelector('input[name="phone[]"]').value =
-                    passengerData.phone || "";
-                  passengerForm.querySelector(
-                    'textarea[name="special-requirements[]"]'
-                  ).value = passengerData.specialRequirements || "";
-                }
-              }
-            }
-          }
-        }, 500); // Delay to ensure accommodations are loaded
-      }
-
-      // Clear form data from localStorage (optional - can be called after successful submission)
-      function clearFormData() {
-        localStorage.removeItem("bookingFormData");
-      }
-
-      // Add event listeners to save form data on input
-      function setupAutoSave() {
-        // Save on input for text fields
-        document
-          .querySelectorAll("input, select, textarea")
-          .forEach((element) => {
-            element.addEventListener("input", saveFormData);
-            element.addEventListener("change", saveFormData);
-          });
-
-        // Save on radio button change
-        document.querySelectorAll('input[type="radio"]').forEach((radio) => {
-          radio.addEventListener("change", saveFormData);
-        });
-
-        // Save when accommodation is selected
-        document.addEventListener("click", function (e) {
-          if (e.target.closest(".accommodation-card")) {
-            setTimeout(saveFormData, 100);
-          }
-        });
+        updatePriceCalculation(); // Update price when accommodations are loaded
       }
 
       // Check if user is logged in
@@ -1669,8 +1669,7 @@
           const reservationId = saveBookingToUser(formData);
 
           if (reservationId) {
-            // Clear saved form data and pending booking
-            clearFormData();
+            // Clear pending booking (but not form data since we removed auto-save)
             localStorage.removeItem("pendingBooking");
 
             alert(
@@ -1766,7 +1765,7 @@
                   addPassengerForm();
                   const passengerData = bookingData.passengerForms[i];
                   const passengerForm = document.getElementById(
-                    `passenger-form-${i + 1}`
+                    `passenger-form-${i}`
                   );
 
                   if (passengerForm && passengerData) {
@@ -1787,10 +1786,15 @@
                 }
               }
             }
+
+            updatePriceCalculation(); // Update price after restoring pending booking
           }, 1000);
 
           // Show notification about pending booking
           showPendingBookingNotification();
+
+          // Clear the pending booking after restoring it
+          localStorage.removeItem("pendingBooking");
         }
       }
 
@@ -1800,11 +1804,11 @@
         notification.className =
           "fixed top-4 right-4 bg-neon-blue text-white px-6 py-3 rounded-lg shadow-lg z-50";
         notification.innerHTML = `
-        <div class="flex items-center">
-            <i class="fas fa-info-circle mr-2"></i>
-            <span>We found your pending booking. Your form has been auto-filled.</span>
-        </div>
-    `;
+    <div class="flex items-center">
+        <i class="fas fa-info-circle mr-2"></i>
+        <span>We found your pending booking. Your form has been auto-filled.</span>
+    </div>
+`;
         document.body.appendChild(notification);
 
         // Remove notification after 5 seconds
@@ -1816,18 +1820,10 @@
       // Update your existing DOMContentLoaded event listener in booking page
       document.addEventListener("DOMContentLoaded", async function () {
         createStars();
-        updateNavigation(); // Add this line
+        updateNavigation();
 
-        // Setup passenger selection change
-        const passengerRadios = document.querySelectorAll(
-          'input[name="passengers"]'
-        );
-        passengerRadios.forEach((radio) => {
-          radio.addEventListener("change", function () {
-            updateMaxPassengers();
-            saveFormData();
-          });
-        });
+        // Use the new setup function for passenger radios
+        setupPassengerRadioListeners();
 
         // Initialize max passengers
         updateMaxPassengers();
@@ -1839,11 +1835,7 @@
         await loadAccommodations();
         await loadDestinations();
 
-        // Setup auto-save and restore form data
-        setupAutoSave();
-        restoreFormData();
-
-        // Check for pending booking
+        // Check for pending booking (only for login redirect scenario)
         checkPendingBooking();
       });
     </script>
