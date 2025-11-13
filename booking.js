@@ -773,73 +773,93 @@ function getCurrentUser() {
   return user ? JSON.parse(user) : null;
 }
 
-// Save booking to user's reservations
-function saveBookingToUser(bookingData) {
-  const currentUser = getCurrentUser();
-  if (!currentUser) {
-    console.error("No current user found");
-    return false;
-  }
-
-  // Generate a unique reservation ID
-  const reservationId = Date.now();
-
-  // Get all users from localStorage
-  const users = JSON.parse(localStorage.getItem("spaceVoyagerUsers") || "[]");
-  console.log("All users before update:", users);
-
-  // Find the current user in the users array and add the reservation
-  let userUpdated = false;
-  const updatedUsers = users.map((user) => {
-    if (user.id === currentUser.id) {
-      if (!user.reservations) {
-        user.reservations = [];
-      }
-      user.reservations.push(reservationId);
-      userUpdated = true;
-      console.log("Updated user reservations:", user.reservations);
-
-      // Update current user in localStorage
-      localStorage.setItem("currentUser", JSON.stringify(user));
+// NEW: Save booking to localStorage
+function saveBookingToLocalStorage(bookingData) {
+  try {
+    // Get current user
+    const currentUser = getCurrentUser();
+    if (!currentUser) {
+      console.error("No user logged in");
+      return false;
     }
-    return user;
-  });
 
-  if (!userUpdated) {
-    console.error("Current user not found in users array");
+    // Generate unique booking ID
+    const bookingId =
+      "BK-" + Date.now() + "-" + Math.random().toString(36).substr(2, 9);
+
+    // Get selected destination details
+    const destinationSelect = document.getElementById("destination");
+    const selectedDestination =
+      destinationSelect.options[destinationSelect.selectedIndex];
+    const destination = JSON.parse(
+      selectedDestination.getAttribute("data-destination")
+    );
+
+    // Get selected accommodation details
+    const accommodationId = document.getElementById("accommodation").value;
+    const accommodation = accommodationsData.find(
+      (acc) => acc.id === accommodationId
+    );
+
+    // Get total price
+    const totalPrice = document.getElementById("total-price").textContent;
+    const numericPrice = parseFloat(totalPrice.replace(/[^\d.]/g, ""));
+
+    // Create complete booking object
+    const completeBooking = {
+      bookingId: bookingId,
+      userId: currentUser.id,
+      userEmail: currentUser.email,
+      bookingDate: new Date().toISOString(),
+      status: "confirmed",
+      destination: {
+        id: destination.id,
+        name: destination.name,
+        description: destination.description,
+        travelDuration: destination.travelDuration,
+        distance: destination.distance,
+        gravity: destination.gravity,
+        temperature: destination.temperature,
+        price: destination.price,
+      },
+      departureDate: bookingData.departureDate,
+      accommodation: {
+        id: accommodation.id,
+        name: accommodation.name,
+        shortDescription: accommodation.shortDescription,
+        size: accommodation.size,
+        occupancy: accommodation.occupancy,
+        pricePerDay: accommodation.pricePerDay,
+        price: accommodation.pricePerDay, // For backward compatibility
+      },
+      passengers: bookingData.passengerForms.map((passenger) => ({
+        firstName: passenger.firstName,
+        lastName: passenger.lastName,
+        email: passenger.email,
+        phone: passenger.phone,
+        specialRequirements: passenger.specialRequirements,
+      })),
+      totalPrice: numericPrice,
+      passengerType: bookingData.passengers,
+    };
+
+    // Get existing bookings from localStorage
+    const existingBookings = JSON.parse(
+      localStorage.getItem("spaceBookings") || "[]"
+    );
+
+    // Add new booking
+    existingBookings.push(completeBooking);
+
+    // Save back to localStorage
+    localStorage.setItem("spaceBookings", JSON.stringify(existingBookings));
+
+    console.log("Booking saved successfully:", completeBooking);
+    return bookingId;
+  } catch (error) {
+    console.error("Error saving booking to localStorage:", error);
     return false;
   }
-
-  // Save updated users back to localStorage
-  localStorage.setItem("spaceVoyagerUsers", JSON.stringify(updatedUsers));
-  console.log("Users saved to localStorage with new reservation");
-
-  // Verify the save worked
-  const verifyUsers = JSON.parse(
-    localStorage.getItem("spaceVoyagerUsers") || "[]"
-  );
-  const verifyUser = verifyUsers.find((u) => u.id === currentUser.id);
-  console.log("Verification - user reservations:", verifyUser?.reservations);
-
-  // Save booking details with reservation ID
-  const bookingWithId = {
-    ...bookingData,
-    reservationId: reservationId,
-    userId: currentUser.id,
-    bookingDate: new Date().toISOString(),
-  };
-
-  // Save booking to separate bookings storage
-  const existingBookings = JSON.parse(
-    localStorage.getItem("spaceVoyagerBookings") || "[]"
-  );
-  existingBookings.push(bookingWithId);
-  localStorage.setItem(
-    "spaceVoyagerBookings",
-    JSON.stringify(existingBookings)
-  );
-
-  return reservationId;
 }
 
 // Function to show booking confirmation popup
@@ -1442,7 +1462,7 @@ function downloadBookingConfirmation(
   };
 }
 
-// Update form submission handler to show the confirmation popup
+// NEW: Updated form submission handler
 document
   .getElementById("booking-form")
   .addEventListener("submit", function (e) {
@@ -1512,15 +1532,36 @@ document
       formData.passengerForms.push(passengerData);
     });
 
-    // Save booking to user's account
-    const reservationId = saveBookingToUser(formData);
+    // NEW: Save booking to localStorage instead of old system
+    const bookingId = saveBookingToLocalStorage(formData);
 
-    if (reservationId) {
-      // Clear pending booking (but not form data since we removed auto-save)
+    if (bookingId) {
+      // Clear pending booking
       localStorage.removeItem("pendingBooking");
 
-      // Show confirmation popup instead of alert
-      showBookingConfirmation(formData, reservationId);
+      // Show confirmation popup
+      showBookingConfirmation(formData, bookingId);
+
+      // Reset form after successful booking
+      setTimeout(() => {
+        document.getElementById("booking-form").reset();
+        document.getElementById("total-price").textContent = "$0";
+        document.getElementById("destination-info").classList.add("hidden");
+        document
+          .getElementById("accommodations-section")
+          .classList.remove("visible");
+
+        // Reset passenger forms to just primary passenger
+        const passengerFormsContainer = document.getElementById(
+          "passenger-forms-container"
+        );
+        const primaryForm =
+          passengerFormsContainer.querySelector("#passenger-form-0");
+        passengerFormsContainer.innerHTML = "";
+        passengerFormsContainer.appendChild(primaryForm);
+        passengerCount = 1;
+        updateAddPassengerButton();
+      }, 2000);
     } else {
       alert("There was an error processing your booking. Please try again.");
     }
