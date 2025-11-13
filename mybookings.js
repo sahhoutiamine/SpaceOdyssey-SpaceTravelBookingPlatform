@@ -186,6 +186,15 @@ function displayBookings(bookings) {
               View Details
             </button>
             ${
+              booking.status === "confirmed"
+                ? `
+              <button class="bg-green-500/20 border border-green-500/50 text-green-400 px-4 py-2 rounded-lg text-sm hover:bg-green-500/30 transition-colors" onclick="editBooking('${booking.bookingId}')">
+                Edit
+              </button>
+            `
+                : ""
+            }
+            ${
               booking.status !== "cancelled"
                 ? `
               <button class="bg-red-500/20 border border-red-500/50 text-red-400 px-4 py-2 rounded-lg text-sm hover:bg-red-500/30 transition-colors" onclick="cancelBooking('${booking.bookingId}')">
@@ -406,6 +415,276 @@ function viewBookingDetails(bookingId) {
   document.getElementById("close-details").addEventListener("click", () => {
     document.body.removeChild(modal);
   });
+
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) {
+      document.body.removeChild(modal);
+    }
+  });
+}
+
+// Edit booking function
+function editBooking(bookingId) {
+  const user = checkUserLogin();
+  if (!user) return;
+
+  const bookings = getUserBookings(user.id);
+  const booking = bookings.find((b) => b.bookingId === bookingId);
+
+  if (!booking) {
+    alert("Booking not found!");
+    return;
+  }
+
+  // Create edit modal
+  const modal = document.createElement("div");
+  modal.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(10, 10, 24, 0.8);
+      backdrop-filter: blur(5px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 1rem;
+    `;
+
+  modal.innerHTML = `
+      <div class="booking-card max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="font-orbitron text-2xl text-neon-blue">Edit Booking</h2>
+          <button id="close-edit-modal" class="text-gray-400 hover:text-white text-xl">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        
+        <form id="edit-booking-form">
+          <div class="space-y-6">
+            <div>
+              <h3 class="font-orbitron text-xl mb-4">Journey Information</h3>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-gray-400 mb-2">Departure Date</label>
+                  <input 
+                    type="date" 
+                    name="departureDate" 
+                    value="${booking.departureDate}"
+                    class="w-full bg-space-dark/50 border border-neon-blue/30 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-neon-blue"
+                    required
+                  >
+                </div>
+                <div>
+                  <label class="block text-gray-400 mb-2">Accommodation</label>
+                  <select 
+                    name="accommodation" 
+                    class="w-full bg-space-dark/50 border border-neon-blue/30 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-neon-blue"
+                  >
+                    <option value="standard" ${
+                      booking.accommodation.name === "Standard Cabin"
+                        ? "selected"
+                        : ""
+                    }>Standard Cabin</option>
+                    <option value="deluxe" ${
+                      booking.accommodation.name === "Deluxe Suite"
+                        ? "selected"
+                        : ""
+                    }>Deluxe Suite</option>
+                    <option value="luxury" ${
+                      booking.accommodation.name === "Luxury Quarters"
+                        ? "selected"
+                        : ""
+                    }>Luxury Quarters</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            
+            <div>
+              <h3 class="font-orbitron text-xl mb-4">Passenger Details</h3>
+              <div id="passengers-container" class="space-y-4">
+                ${booking.passengers
+                  .map(
+                    (passenger, index) => `
+                  <div class="bg-space-dark/50 p-4 rounded-lg">
+                    <h4 class="font-semibold mb-3">Passenger ${index + 1}</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label class="block text-gray-400 mb-2">First Name</label>
+                        <input 
+                          type="text" 
+                          name="passenger-${index}-firstName" 
+                          value="${passenger.firstName}"
+                          class="w-full bg-space-dark/50 border border-neon-blue/30 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-neon-blue"
+                          required
+                        >
+                      </div>
+                      <div>
+                        <label class="block text-gray-400 mb-2">Last Name</label>
+                        <input 
+                          type="text" 
+                          name="passenger-${index}-lastName" 
+                          value="${passenger.lastName}"
+                          class="w-full bg-space-dark/50 border border-neon-blue/30 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-neon-blue"
+                          required
+                        >
+                      </div>
+                      <div>
+                        <label class="block text-gray-400 mb-2">Email</label>
+                        <input 
+                          type="email" 
+                          name="passenger-${index}-email" 
+                          value="${passenger.email}"
+                          class="w-full bg-space-dark/50 border border-neon-blue/30 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-neon-blue"
+                          required
+                        >
+                      </div>
+                      <div>
+                        <label class="block text-gray-400 mb-2">Phone</label>
+                        <input 
+                          type="tel" 
+                          name="passenger-${index}-phone" 
+                          value="${passenger.phone}"
+                          class="w-full bg-space-dark/50 border border-neon-blue/30 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-neon-blue"
+                          required
+                        >
+                      </div>
+                      <div class="md:col-span-2">
+                        <label class="block text-gray-400 mb-2">Special Requirements</label>
+                        <textarea 
+                          name="passenger-${index}-specialRequirements"
+                          class="w-full bg-space-dark/50 border border-neon-blue/30 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-neon-blue"
+                          rows="2"
+                        >${passenger.specialRequirements || ""}</textarea>
+                      </div>
+                    </div>
+                  </div>
+                `
+                  )
+                  .join("")}
+              </div>
+            </div>
+            
+            <div>
+              <h3 class="font-orbitron text-xl mb-4">Special Requests</h3>
+              <div class="bg-space-dark/50 p-4 rounded-lg">
+                <label class="block text-gray-400 mb-2">Additional Notes</label>
+                <textarea 
+                  name="specialRequests"
+                  class="w-full bg-space-dark/50 border border-neon-blue/30 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-neon-blue"
+                  rows="3"
+                  placeholder="Any special requests or notes for your journey..."
+                >${booking.specialRequests || ""}</textarea>
+              </div>
+            </div>
+          </div>
+          
+          <div class="flex justify-end space-x-4 mt-6">
+            <button type="button" class="btn-secondary px-6 py-2 rounded-lg" id="cancel-edit">
+              Cancel
+            </button>
+            <button type="submit" class="btn-primary text-white px-6 py-2 rounded-lg glow">
+              Save Changes
+            </button>
+          </div>
+        </form>
+      </div>
+    `;
+
+  document.body.appendChild(modal);
+
+  // Close modal events
+  document.getElementById("close-edit-modal").addEventListener("click", () => {
+    document.body.removeChild(modal);
+  });
+
+  document.getElementById("cancel-edit").addEventListener("click", () => {
+    document.body.removeChild(modal);
+  });
+
+  // Form submission
+  document
+    .getElementById("edit-booking-form")
+    .addEventListener("submit", (e) => {
+      e.preventDefault();
+
+      // Get form data
+      const formData = new FormData(e.target);
+      const updatedBooking = { ...booking };
+
+      // Update departure date
+      updatedBooking.departureDate = formData.get("departureDate");
+
+      // Update accommodation
+      const accommodationType = formData.get("accommodation");
+      const accommodationOptions = {
+        standard: {
+          name: "Standard Cabin",
+          size: "2 people",
+          pricePerDay: 500,
+        },
+        deluxe: {
+          name: "Deluxe Suite",
+          size: "2 people",
+          pricePerDay: 800,
+        },
+        luxury: {
+          name: "Luxury Quarters",
+          size: "4 people",
+          pricePerDay: 1200,
+        },
+      };
+      updatedBooking.accommodation = accommodationOptions[accommodationType];
+
+      // Update passengers
+      updatedBooking.passengers = booking.passengers.map((passenger, index) => {
+        return {
+          ...passenger,
+          firstName: formData.get(`passenger-${index}-firstName`),
+          lastName: formData.get(`passenger-${index}-lastName`),
+          email: formData.get(`passenger-${index}-email`),
+          phone: formData.get(`passenger-${index}-phone`),
+          specialRequirements: formData.get(
+            `passenger-${index}-specialRequirements`
+          ),
+        };
+      });
+
+      // Update special requests
+      updatedBooking.specialRequests = formData.get("specialRequests");
+
+      // Recalculate total price
+      const days = parseInt(booking.destination.travelDuration);
+      updatedBooking.totalPrice =
+        booking.destination.price +
+        updatedBooking.accommodation.pricePerDay * days;
+
+      // Save updated booking
+      const allBookings = JSON.parse(
+        localStorage.getItem("spaceBookings") || "[]"
+      );
+      const bookingIndex = allBookings.findIndex(
+        (b) => b.bookingId === bookingId
+      );
+
+      if (bookingIndex !== -1) {
+        allBookings[bookingIndex] = updatedBooking;
+        localStorage.setItem("spaceBookings", JSON.stringify(allBookings));
+
+        // Refresh the display
+        initPage();
+
+        // Show success message
+        alert("Booking updated successfully!");
+      } else {
+        alert("Error updating booking!");
+      }
+
+      document.body.removeChild(modal);
+    });
 
   modal.addEventListener("click", (e) => {
     if (e.target === modal) {
