@@ -5,7 +5,7 @@
       "name": "Alex Johnson",
       "email": "alex.johnson@email.com",
       "password": "space2023!",
-      "reservations": [101, 103]
+      "reservations": []
     },
     {
       "id": 2,
